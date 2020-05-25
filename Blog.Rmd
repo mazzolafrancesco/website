@@ -1,0 +1,63 @@
+---
+title: "The business externality on human lives during an epidemic"
+author: "Francesco Mazzola"
+date: "April 29th, 2020"
+output: html_document
+---
+<style>
+body {
+text-align: justify}
+</style>
+
+## Preamble
+The Covid-19 crisis has called for timely government interventions. Though containing the spread of the virus and minimizing costs of human lives should be the priority, we have observed a substantial degree of heterogeneity in the type and timing of countermeasures around the world. One perspective is that Western governments want to avoid or delay a lockdown policy to minimize the negative burden on the economy, at the expense of losses on human lives ([Zingales, 2020](https://promarket.org/captured-western-governments-are-failing-the-coronavirus-test/)). In reality, do we observe any trade-off between the "business" and the "public health" perspective ex post? Analysing the number of deaths among residents and the degree of business lockdown across municipalities in Italy, this short empirical exercise tries to shed light on the intensity of the business externality on human lives during a pandemic. This is important to look at, since learning from this epidemic would prepare us with better weapons for any next wave, possibly in an internationally coordinated way ([Beck and Wagner, 2020](https://cepr.org/sites/default/files/news/CovidEconomics8.pdf)).
+
+I provide evidence that municipalities with relatively more employees of industries that were forced to shutdown experience fewer deaths among the total and elderly population. This is consistent with the idea that a laxer lockdown speed up the virus contagion. The effects are present excluding the one-week incubation period just after the government "lockdown" intervention and excluding all municipalities in Lombardia, the most hit region. In regions governed by the right-wing party, the short-term effect gets weakened, suggesting that in practice firms may have kept operations open even if they couldn't.
+
+## Methodology
+An investigation on prudence, losses on human lives and foregone profit is challenging, especially framing it within the current Covid-19 pandemic scenario. First and foremost, data on either speed of contagion and fatality rate are often biased, since they depend on the number of tests carried out. Also, the method of data collection and death classification differs largely across countries, making almost impossible at this stage a cross-country comparison ([Belloc et al., 2020](https://voxeu.org/article/cross-country-correlation-analysis-research-covid-19)). My attempt bypasses infection rates and focuses on a single-country analysis to minimize any measurement error of that sort. Also, I try to control for unobservable local demographics characteristics at the municipality level and for time trends through a Difference-in-Difference (DiD) estimation, with the most granular fixed-effects.
+
+On March 11th (the "treatment date") the Italian Prime Minister enacted an important [DPCM decree](https://www.gazzettaufficiale.it/eli/id/2020/03/11/20A01605/sg) imposing a drastic lockdown measure, consisting in a sudden shutdown on the operations of firms belonging to a number of business sectors. To measure the intensity of the business shutdown (the "treatment") on human lives, I construct the continuous treatment variable identifying ATECO industry codes corresponding to the Prime Minister's list of those that were forced to stop their operations. Specifically, I divide the number of employees working in local business units of firms belonging to sectors that were force to shutdown by the employees of firms of all industries (both shutdown and open) in a municipality $m$, i.e. $suspended_m$. The idea is that, allowing more workers to go to their work place and, e.g., interact with colleagues, increased their vulnerability and exposure to the virus ([Eichenbaum et al., 2020](https://www.kellogg.northwestern.edu/faculty/rebelo/htm/epidemics.pdf)). The hypothesis that $suspended_m$ should affect the number of deaths relies on the fact that with higher mobility it is more likely that the virus enters home, increasing fatalities. The timeline I have in mind for the DiD estimation is
+
+$$ 
+17/02\underbrace{/2020 \hspace{.5cm} - \hspace{.5cm} \textbf{11/0}}_\text{pre-treatment}\textbf{3/}
+\underbrace{\textbf{2020} \hspace{.5cm} ... \hspace{.5cm} 17/}_\text{incubation}03
+\underbrace{/2020 \hspace{.5cm} - \hspace{.5cm} 04/0}_\text{post-treatment}4/2020
+$$ 
+Given the slow nature of the virus spread, I exclude the one-week following the treatment date (11/03/2020) throughout the analysis, focusing on a 23 days window before ("pre-treatment") and 23 days after a one-incubation-week ("post-treatment") since the policy intervention.
+
+## Data
+In the context of this emergency situation, the main Italian Statistical agency (ISTAT) recently released death registry data on a subsample of 1,689 municipality covering all Italian regions to help researchers and policy-makers understanding the spread and danger of the virus. Specifically, I build a dataset at municipality level using the daily death registry. The dataset contains the number of deaths, together with the gender and age breakdown, from January 2020 to the beginning of April 2020. Although I do not explicitly observe the cause of a death, I control for the municipality pre-trend with the DiD approach. Comparing death data from this death registry to the "official" fatalities reported by the Protezione Civile, [Ciminelli and Garcia-Mandicó (2020)](https://voxeu.org/article/covid-19-italy-analysis-death-registry-data) recently showed that there is substantial underreporting in the offical data. This may be partially driven by the fact that in most cases deaths outside hospitals are not counted in official statistics. In contrast, the daily death registry does not suffer from this bias. Next, I match this dataset mapping all Italian firms to their local business units (e.g. offices, shops, warehouse, etc.) throughout municipalities, to create a proxy for the intensity of the business shutdown. 
+
+## Model
+The model takes the form
+
+$$
+y_{r,m,t}=\delta_m + \gamma dpost_t + \beta X_m + \phi(dpost_{t}\times suspended_m ) + \varepsilon_{r,m,t}
+$$
+
+where $y$ is the number of deaths in region $r$, municipality $m$, in year $t$. $X_m$ is a vector controlling for demographic characteristics of the municipality, and $\delta_m$ are municipality-fixed effects. We have two time periods across Prime Minister's decision to shutdown a number of industries. The dummy variable $d_{post}$ equals one on "post-treatment" days, and zero on the "pre-treatment" period. Lastly, $suspended_m$ is the ratio between the number of employees of companies that were to shutdown and those from companies let operating freely in a municipality $m$. This time-invariant vector ranges from zero to one, increasing in the intensity of the "treatment", i.e. the business lockdown.
+
+The interaction coefficient estimates whether municipalities with higher shutdown rates experienced a weaker rise in daily deaths in the period across the countermeasure date. This is given by the coefficient $\phi$. 
+
+## Results
+|  | All | Elderly | weighted-Eld | noLombardia | Placebo | Right-wing |
+|--------------------------|--------------------------|--------------------------|--------------------------|--------------------------|--------------------------|--------------------------|
+|  | $D_{n,t}$ | $EldD_{n,t}$ | $wEldD_{n,t}$ | $wEldD_{n,t}$ | $wEldD_{n,t}$ | $wEldD_{n,t}$ |
+|--------------------------|--------------------------|--------------------------|--------------------------|--------------------------|--------------------------|--------------------------|
+| $dpost_t$ | $\underset{(.271)}{1.292^{***}}$ | $\underset{(.264)}{1.232^{***}}$ | $\underset{(.103)}{.474^{***}}$ | $\underset{(.114)}{.354^{***}}$ | $\underset{(.0203)}{.039^{*}}$ | $\underset{(.105)}{.480^{***}}$ |
+| $susp_n \times dpost_t$ | $\underset{(.458)}{-1.48^{***}}$ | $\underset{(.448)}{-1.416^{***}}$ | $\underset{(.175)}{-.561^{***}}$ | $\underset{(.197)}{-.453^{**}}$ | $\underset{(.036)}{-.0164}$ | $\underset{(215)}{-.755^{***}}$ |
+| $susp_n \times dpost_t \times right_r$ |  |  |  |  |  | $\underset{(.0441)}{.105^{**}}$ |
+| $Intercept$ | $\underset{(.019)}{.665^{***}}$ | $\underset{(.189)}{.617^{***}}$ | $\underset{(.007)}{.231^{***}}$ | $\underset{(.007)}{.228^{***}}$ |  $\underset{(.002)}{.202^{***}}$ | $\underset{(.007)}{.233^{***}}$ |
+|----------------|------------------------|-----------------------|---------------------|--------------------------|--------------------------|--------------------------|
+| $Municipality FE$ | $\checkmark$ | $\checkmark$ | $\checkmark$ | $\checkmark$ | $\checkmark$ | $\checkmark$ |
+| $N$ | $43,979$ | $43,979$ | $43,389$ | $27,568$ | $26,394$ | $42,688$ |
+| $R^2$ | $.72$ | $.71$ | $.72$ | $.73$ | $.74$ | $.72$ |
+$\textit{Note: Robust standard errors in parentheses. * p<0.10, ** p<0.05, *** p<0.01.}$
+
+
+Results of table 1 suggest a point estimate of -1.4 (column 1 and 2) for $\phi$, i.e. a one-standard-deviation (12 percentage points) increase in shutdown rate (349.5 employees staying home or EUR $222,495$ foregone profit) is associated with 1.5 daily saved lives among the total (column 1) and elderly (column 2) population. The point estimate shrinks by a factor of three ($\phi=.5$) if we consider the elderly dependency ratio of a municipality (i.e., $wEldD_{n,t}=ElderlyDependency_n\times EldD_{n,t}$), and if we exclude municipalities in Lombardia region (column 4). To validate the effect coming from the March 11th lockdown measure, I shift the "treatment date" to February 21st, when the first "official" coronavirus-case was ever reported in Italy, and finish the post-treatment period at March 11th. Results of this placebo exercise (column 5) show that there is no statistical difference in fatalities as $suspended_n$ increases. Lastly, evidence shows that the link between $suspended_n$ and $wEldD_{n,t}$ gets weakened in regions governed by the right-wing party (column 6), potentially highlighting the higher leeway on real business lockdown of those regions.
+By and large, municipalities with higher treatment intensity saw a bigger reduction in daily fatalities as a result of the "treatment". 
+
+## Robustness
+The results shown above remain in line with predictions if I scale up the level of fixed effects from "municipality FE" to "province FE", controlling in the latter case for the population size and the population density of the municipality. Likewise, estimates stay consistent even when including "day fixed effects" throughout the model specifications. Also, results are robust to the definition of $suspended_n$, that is replacing it with the fraction of the number of business units - rather than the number of employees therein - that were to shutdown to those remained open. 
