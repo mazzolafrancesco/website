@@ -12,7 +12,7 @@
 
 
 
-<title>FRANCESCO MAZZOLA</title>
+<title>CV</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,6 +20,9 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -249,6 +252,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -256,6 +316,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -293,42 +363,48 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">FRANCESCO MAZZOLA</h1>
+<h1 class="title toc-ignore">CV</h1>
 
 </div>
 
 
-<style type="text/css">
-.title {
-  display: none;
-}
-
-#getting-started img {
-  margin-right: 10px;
-}
-
-</style>
-<div class="row" style="padding-top: 30px;">
-<div class="col-sm-6">
-<h1 id="about"><strong>ABOUT</strong></h1>
-<p>PhD candidate in Finance</p>
-<p>Rotterdam School of Management - Erasmus University</p>
-<p>Erasmus Research Institute in Management (<a href="https://www.erim.eur.nl/">ERIM</a>)</p>
-<p>Fields of interest: Financial Intermediation, Banking; Macro Finance and Growth; Corporate Finance;</p>
-<p>Check out latest research on banking and corporate finance at EUR visiting the <a href="https://www.erim.eur.nl/banking/">Erasmus Banking Hub</a> and the <a href="https://www.erim.eur.nl/ecfcg/">Erasmus Corporate Finance and Corporate Governance Hub</a>.</p>
-<h3 id="contacts">Contacts:</h3>
-<p>Erasmus University, Burgemeester Oudlaan 50, 3062 PA Rotterdam, The Netherlands</p>
-<p>Email: <a href="mailto:mazzola@rsm.nl" class="email">mazzola@rsm.nl</a></p>
-<p>Phone: +31 10 40881934</p>
-<p>Mobile Phone: +31 6 40285103</p>
+<div id="current-position" class="section level2">
+<h2>CURRENT POSITION</h2>
+<p><strong>Erasmus University Rotterdam</strong></p>
+<p><a href="https://www.erim.eur.nl/people/francesco-mazzola/">Ph.D. Candidate in Finance</a>, Rotterdam School of Management, 2018-2022 (expected)</p>
+<p>Fields: Banking; Financial Regulation; Macro Finance and Growth;</p>
+<p>Supervisory Team: <a href="https://www.rsm.nl/people/dion-bongaerts/">Dion Bongaerts</a> and <a href="http://wolfwagner.de/">Wolf Wagner</a>;</p>
 </div>
-<div class="col-sm-6">
-<h3 id="my-linkedin-page"><a href="https://www.linkedin.com/in/mazzola-francesco/">My Linkedin page</a></h3>
-<p><a href = "https://www.erim.eur.nl/people/francesco-mazzola/"> <img src="images/photo%20FM_0078.jpg" /> </a></p>
+<div id="education" class="section level2">
+<h2>EDUCATION</h2>
+<p><strong>Barcelona Graduate School of Economics</strong></p>
+<p>Banking Summer School, 2019</p>
+<p><strong>Nova School of Business and Economics - LUISS</strong></p>
+<p>M.Sc., Finance, 2017</p>
+<p>Double Degree, Magna Cum Laude</p>
+<p><strong>LUISS Guido Carli University</strong></p>
+<p>B.Sc., Economics, 2015</p>
+<p>Structured partnership with Utrecht School of Economics</p>
+</div>
+<div id="other-positions" class="section level2">
+<h2>OTHER POSITIONS</h2>
+<p><strong>European Central Bank</strong></p>
+<p>DG Macroprudential Policies and Financial Stability, Trainee, Frankfurt, 2017-2018</p>
+<p><strong>UniCredit Group</strong></p>
+<p>Risk Management, Intern, Milan, 2016</p>
+</div>
+<div id="teaching" class="section level2">
+<h2>TEACHING</h2>
+<p><strong>Rotterdam School of Management</strong></p>
+<p>Lecturer in Corporate Finance, B.Sc. Business Administration, 2020</p>
+<p>B.Sc. Thesis Supervision, Corporate Finance, 2018-2019</p>
+<p>M.Sc. Thesis Supervision, Corporate Finance, Banking, 2018-2020</p>
 </div>
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -361,6 +437,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>

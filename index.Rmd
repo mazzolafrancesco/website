@@ -1,5 +1,5 @@
 ---
-title: "MyLabJournal"
+title: "FRANCESCO MAZZOLA"
 output: html_document
 ---
 
@@ -17,27 +17,34 @@ output: html_document
 <div class="row" style="padding-top: 30px;">
 <div class="col-sm-6">
 
-# **My Lab Journal**
+# **ABOUT**
 
-This is a template example for lab journaling. Students in Matt Crump's Human Cognition and Performance Lab will use this template to learn R, and other things. Students can replace this text with more fun things. People not in my lab can use this too.
+PhD candidate in Finance
 
-## How to use
+Rotterdam School of Management - Erasmus University
 
-1. fork the repo for this website and follow instructions on read me to get set up. [https://github.com/CrumpLab/LabJournalWebsite](https://github.com/CrumpLab/LabJournalWebsite)
+Erasmus Research Institute in Management ([ERIM](https://www.erim.eur.nl/))
 
-2. Blog/journal what you are doing in R, by editing the Journal.Rmd. See the [Journal page](https://crumplab.github.io/LabJournalWebsite/Journal.html) for an example of what to do to get started learning R.
+Fields of interest: Financial Intermediation, Banking; Macro Finance and Growth; Corporate Finance;
 
-3. See the [links page](https://crumplab.github.io/LabJournalWebsite/Links.html) for lots of helpful links on learning R.
+Check out latest research on banking and corporate finance at EUR visiting the [Erasmus Banking Hub](https://www.erim.eur.nl/banking/) and the [Erasmus Corporate Finance and Corporate Governance Hub](https://www.erim.eur.nl/ecfcg/).
 
-4. Change everything to make it your own.
+### Contacts:
+Erasmus University, Burgemeester Oudlaan 50, 3062 PA Rotterdam, The Netherlands 
+
+Email: mazzola@rsm.nl 
+
+Phone: +31 10 40881934 
+
+Mobile Phone: +31 6 40285103 
 
 
 </div>
 <div class="col-sm-6">
 
-### [Crump Lab: Human Cognition and Performance](https://crumplab.github.io)
+### [My Linkedin page](https://www.linkedin.com/in/mazzola-francesco/)
 
-<a href = "https://crumplab.github.io">
-![](images/logo.png)
+<a href = "https://www.erim.eur.nl/people/francesco-mazzola/">
+![](images/photo FM_0078.jpg)
 </a>
 </div>

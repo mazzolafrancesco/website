@@ -1,0 +1,59 @@
+---
+title: "CV"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: false
+    toc_depth: 1
+    #code_folding: hide
+---
+## CURRENT POSITION
+
+**Erasmus University Rotterdam**
+
+[Ph.D. Candidate in Finance](https://www.erim.eur.nl/people/francesco-mazzola/), Rotterdam School of Management, 2018-2022 (expected)
+
+Fields: Banking; Financial Regulation; Macro Finance and Growth;
+
+Supervisory Team: [Dion Bongaerts](https://www.rsm.nl/people/dion-bongaerts/) and [Wolf Wagner](http://wolfwagner.de/);
+
+## EDUCATION
+
+**Barcelona Graduate School of Economics**
+
+Banking Summer School, 2019
+
+**Nova School of Business and Economics - LUISS**
+
+M.Sc., Finance, 2017
+
+Double Degree, Magna Cum Laude
+
+**LUISS Guido Carli University**
+
+B.Sc., Economics, 2015
+
+Structured partnership with Utrecht School of Economics
+
+## OTHER POSITIONS
+
+**European Central Bank**
+
+DG Macroprudential Policies and Financial Stability, Trainee, Frankfurt, 2017-2018
+
+**UniCredit Group**
+
+Risk Management, Intern, Milan, 2016
+
+## TEACHING
+
+**Rotterdam School of Management**
+
+Lecturer in Corporate Finance, B.Sc. Business Administration, 2020
+
+B.Sc. Thesis Supervision, Corporate Finance, 2018-2019
+
+M.Sc. Thesis Supervision, Corporate Finance, Banking, 2018-2020
+
