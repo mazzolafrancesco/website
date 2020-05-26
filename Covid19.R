@@ -714,7 +714,7 @@ df$shut11_p<-ifelse(is.na(df$shut11_avgp),df$shut11_p,NA)
 df$shut25_p<-ifelse(is.na(df$shut25_avgp),df$shut25_p,NA)
 
 
-#write.dta(data.frame(df,stsringsAsFactors = FALSE), "/data/R_projects/website/website/website_direct/Covid19.dta")
+#write.dta(data.frame(df,stsringsAsFactors = FALSE), "/data/R_projects/website_proj/Covid19.dta")
 
 effect <- plm(excD ~ lag(excD,1), 
               data = df,
