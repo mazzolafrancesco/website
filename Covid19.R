@@ -562,7 +562,7 @@ dd %>%
              "0217","0218","0219","0220","0221","0222","0223","0224","0225","0226","0227","0228","0229",
              "0216","0215","0214","0213","0212","0211","0210","0209","0208","0207","0206","0205","0204","0203","0202","0201")) %>% #NOME_REGIONE %in% c("Abruzzo","Lazio")
   group_by(high_susp,tau0311) %>% summarise(ma=mean(ma,na.rm=TRUE),death=mean(death,na.rm=TRUE)) %>%
-  ggplot( aes(x= tau0311, y=death, group=high_susp, color=high_susp)) + 
+  ggplot( aes(x= tau0311+10, y=death, group=high_susp, color=high_susp)) + 
   geom_line(linetype = "dashed") + 
   geom_line(aes(y=ma,color=high_susp),size=2)+
   #stat_smooth(method = "lm", formula = y ~ poly(x, 6),level = 1-1e-1) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
@@ -570,9 +570,10 @@ dd %>%
   scale_x_continuous(breaks = seq(-50, 50, by = 2))+  
   theme(legend.position="bottom") +
   geom_vline(aes(xintercept = 0))  + 
+  geom_vline(aes(xintercept = 10))  + 
   #geom_rect(aes(xmin= 10, xmax= 24), ymin=-Inf, ymax=Inf, fill=.1) +
   ggtitle("Mortality rates in high and low shutdown exposure municipalities") +
-  xlab("Days relative to first treatment date (March 21st, 2020)") + ylab("Excess death rate, daily average") +
+  xlab("Days relative to first announcement date (March 11st, 2020)") + ylab("Excess death rate, daily average") +
   labs(colour = "HighShutdown")
 #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) #+ #1t lockdown
 #geom_rect(aes(xmin= which(levels(as.factor(GE)) == '0321'), xmax= which(levels(as.factor(GE)) == '0331'), ymin=-Inf, ymax=Inf), fill=.1)
@@ -714,7 +715,7 @@ df$shut11_p<-ifelse(is.na(df$shut11_avgp),df$shut11_p,NA)
 df$shut25_p<-ifelse(is.na(df$shut25_avgp),df$shut25_p,NA)
 
 
-#write.dta(data.frame(df,stsringsAsFactors = FALSE), "/data/R_projects/website_proj/Covid19.dta")
+#write.dta(data.frame(df,stsringsAsFactors = FALSE), "/data/Covid19.dta")
 
 effect <- plm(excD ~ lag(excD,1), 
               data = df,
