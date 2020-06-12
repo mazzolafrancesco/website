@@ -256,6 +256,7 @@ remove(data,a,b,c)
 rcorr(as.matrix(correl[colnames(correl) %in% c("food11","ret11","pers11")]))
 
 # 4433 death registry -----------------------------------------------------
+#fulldaily<-read.csv("https://www.dropbox.com/s/ec5x1mvvlfkbhyg/comuni_giornaliero-decessi.csv?dl=1") #allmunis (7272)
 fulldaily<-read.csv("https://www.dropbox.com/s/fyj9tc54tvahea4/comuni_giornaliero_full.csv?dl=1")
 fulldaily$COD_PROVCOM<-ifelse(nchar(as.character(fulldaily$COD_PROVCOM))<5,paste0("0",as.character(fulldaily$COD_PROVCOM)),as.character(fulldaily$COD_PROVCOM))
 fulldaily$COD_PROVCOM<-ifelse(nchar(as.character(fulldaily$COD_PROVCOM))<6,paste0("0",as.character(fulldaily$COD_PROVCOM)),as.character(fulldaily$COD_PROVCOM))
@@ -279,13 +280,17 @@ fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17
 fulldaily<-fulldaily %>% filter(TIPO_COMUNE %in% c("1","2")) # & month !="01") # 1=Dati fino al 15 aprile 2020; 2=Dati fino al 31 marzo 2020
 fulldaily_1<-fulldaily %>% filter(TIPO_COMUNE=="1") %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
 fulldaily_2<-fulldaily %>% filter(TIPO_COMUNE=="2" & !month %in% c("04")) %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
-fulldaily<-rbind(fulldaily_1,fulldaily_2) 
+fulldaily<-rbind(fulldaily_1,fulldaily_2)
+#fulldaily<-fulldaily %>% filter(TIPO_COMUNE!=2) #only for allmuni
+#fulldaily<-fulldaily %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
+
 fulldaily<-left_join(fulldaily[!is.na(fulldaily$COD_PROVCOM),!colnames(fulldaily) %in% c("NOME_REGIONE","NOME_PROVINCIA","NOME_COMUNE","REG","PROV","month","TIPO_COMUNE")],geog_codes,by="COD_PROVCOM")
 fulldaily$month<-substr(fulldaily$GE,1,2)
 remove(fulldaily_2,fulldaily_1)
 fulldaily<-fulldaily %>% 
-  filter(!GE %in% c(NA, #"0405","0406","0407","0408","0409","0410","0411","0412","0413","0414","0415",
-                    "0229","0416","0417","0418","0419","0420","0421","0422","0423","0424","0425","0426","0427","0428","0429","0430","0431")) #&
+  filter(!GE %in% c(NA, "0229",
+                    "0416","0417","0418","0419","0420","0421","0422","0423","0424","0425","0426","0427","0428","0429","0430","0431") & 
+                      month %in% c("01","02","03","04")) #&
 #"0215","0214","0213","0212","0211","0210","0209","0208","0207","0206","0205","0204","0203","0202","0201")
 fulldaily$saturday<-ifelse(fulldaily$GE %in% c("0201","0208","0215","0222","0229","0307","0314","0321","0328","0404","0411"),1,0)
 fulldaily$sunday<-ifelse(fulldaily$GE %in% c("0202","0209","0216","0223","0301","0308","0315","0322","0329","0405","0412"),1,0)
@@ -295,7 +300,8 @@ fulldaily$wednesday<-ifelse(fulldaily$GE %in% c("0205","0212","0219","0226","030
 fulldaily$thursday<-ifelse(fulldaily$GE %in% c("0206","0213","0220","0227","0305","0312","0319","0326","0402","0409"),1,0)
 fulldaily$friday<-ifelse(fulldaily$GE %in% c("0207","0214","0221","0228","0306","0313","0320","0327","0403","0410"),1,0)
 
-fulldaily %>% group_by(GE) %>% summarise(unique_muni=n_distinct(COD_PROVCOM)) %>% ggplot(aes(x= GE, y=unique_muni,group=1)) + geom_line() +theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90))
+fulldaily %>% group_by(GE) %>% filter(month %in% c("01","02","03","04")) %>%
+  summarise(unique_muni=n_distinct(COD_PROVCOM)) %>% ggplot(aes(x= GE, y=unique_muni,group=1)) + geom_line() +theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90))
 fulldaily$T_20<-as.numeric(as.character(fulldaily$T_20))
 fulldaily$T_19<-as.numeric(as.character(fulldaily$T_19))
 fulldaily$T_18<-as.numeric(as.character(fulldaily$T_18))
@@ -314,7 +320,7 @@ fulldaily_2 <- fulldaily_2 %>% #group_by(COD_PROVCOM,GE) %>%
                       rollmean(T_17,7,fill = NA)+rollmean(T_18,7,fill = NA)+rollmean(T_19,7,fill = NA))/5)
 
 fulldaily %>% 
-  filter(!month %in% c("04")) %>%
+  filter(month %in% c("01","02","03")) %>%
   group_by(GE) %>% summarise(T_20=sum(T_20,na.rm=TRUE),T_19=sum(T_19,na.rm=TRUE),T_18=sum(T_18,na.rm=TRUE),T_17=sum(T_17,na.rm=TRUE),
                              T_16=sum(T_16,na.rm=TRUE),T_16=sum(T_16,na.rm=TRUE),T_15=sum(T_15,na.rm=TRUE)) %>% 
   ggplot( aes(x= GE, y=T_20, group=1,color="2020")) + 
@@ -382,7 +388,7 @@ fulldaily %>%
 #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0325')))   #2nd lockdown 
 
 # identify 1st death in a m: t=0;
-fulldaily_scaled<-fulldaily #fulldaily$month!="01" #[fulldaily$pop_18>10000,]
+fulldaily_scaled<-fulldaily  #fulldaily$month!="01" #[fulldaily$pop_18>10000,]
 # rice <- ts(fulldaily_scaled[fulldaily_scaled$COD_PROVCOM %in% c("098019"),]$cumulT_20_c_pop*10000)
 # bp.rice <- breakpoints(rice ~ 1) #store the breakpoints
 # summary(bp.rice)
