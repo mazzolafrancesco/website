@@ -41,7 +41,6 @@ serv_act<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_c
 ind_susp<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_comunali_2017_DPCM_covid19.xlsx?dl=1&rlkey=c3iel7xmpb3lw6ey8dgi2swtd",sheet="settori sospesi industria")
 serv_susp<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_comunali_2017_DPCM_covid19.xlsx?dl=1&rlkey=c3iel7xmpb3lw6ey8dgi2swtd",sheet="settori sospesi servizi")
 
-
 ind_active$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(ind_active$`Valore_aggiunto.(valori.in.euro)`)
 ind_active$`Fatturato.(valori.in.euro)`<-as.numeric(ind_active$`Fatturato.(valori.in.euro)`)
 ind_active$`Numero.Addetti`<-as.numeric(ind_active$`Numero.Addetti`)
@@ -256,12 +255,13 @@ remove(data,a,b,c)
 rcorr(as.matrix(correl[colnames(correl) %in% c("food11","ret11","pers11")]))
 
 # 4433 death registry -----------------------------------------------------
-#fulldaily<-read.csv("https://www.dropbox.com/s/ec5x1mvvlfkbhyg/comuni_giornaliero-decessi.csv?dl=1") #allmunis (7272)
-fulldaily<-read.csv("https://www.dropbox.com/s/fyj9tc54tvahea4/comuni_giornaliero_full.csv?dl=1")
+fulldaily<-read.csv("https://www.dropbox.com/s/ec5x1mvvlfkbhyg/comuni_giornaliero-decessi.csv?dl=1") #allmunis (7272)
+#fulldaily<-read.csv("https://www.dropbox.com/s/fyj9tc54tvahea4/comuni_giornaliero_full.csv?dl=1")
 fulldaily$COD_PROVCOM<-ifelse(nchar(as.character(fulldaily$COD_PROVCOM))<5,paste0("0",as.character(fulldaily$COD_PROVCOM)),as.character(fulldaily$COD_PROVCOM))
 fulldaily$COD_PROVCOM<-ifelse(nchar(as.character(fulldaily$COD_PROVCOM))<6,paste0("0",as.character(fulldaily$COD_PROVCOM)),as.character(fulldaily$COD_PROVCOM))
 fulldaily$GE<-ifelse(nchar(as.character(fulldaily$GE))<4,paste0("0",as.character(fulldaily$GE)),as.character(fulldaily$GE))
 fulldaily$month<-substr(fulldaily$GE,1,2)
+fulldaily <- fulldaily %>% filter(month %in% c("01","02","03","04"))
 #fulldaily <- fulldaily %>% filter(CL_ETA %in% c("14","15","16","17","18","19","20","21"))#65+
 #fulldaily <- fulldaily %>% filter(CL_ETA %in% c("17","18","19","20","21"))#80+
 # fulldaily$T_20<-fulldaily$M_20
@@ -272,24 +272,25 @@ fulldaily$month<-substr(fulldaily$GE,1,2)
 # fulldaily$T_15<-fulldaily$M_15
 
 geog_codes<-fulldaily[colnames(fulldaily) %in% c("COD_PROVCOM","NOME_REGIONE","NOME_PROVINCIA","TIPO_COMUNE")] %>% filter(!is.na(fulldaily$NOME_REGIONE) | !is.na(fulldaily$NOME_PROVINCIA)) %>% unique()
-#add Balmuccia (002008), Rassa (002110) e Malvicino (006090) in Piemonte e Pedesina (014047) in Lombardia;
-fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "002008", NOME_COMUNE="Balmuccia", NOME_REGIONE="Piemonte")
-fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "002110", NOME_COMUNE="Rassa", NOME_REGIONE="Piemonte")
-fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "006090", NOME_COMUNE="Malvicino", NOME_REGIONE="Piemonte")
-fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "014047", NOME_COMUNE="Pedesina", NOME_REGIONE="Lombardia")  
-fulldaily<-fulldaily %>% filter(TIPO_COMUNE %in% c("1","2")) # & month !="01") # 1=Dati fino al 15 aprile 2020; 2=Dati fino al 31 marzo 2020
-fulldaily_1<-fulldaily %>% filter(TIPO_COMUNE=="1") %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
-fulldaily_2<-fulldaily %>% filter(TIPO_COMUNE=="2" & !month %in% c("04")) %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
-fulldaily<-rbind(fulldaily_1,fulldaily_2)
-#fulldaily<-fulldaily %>% filter(TIPO_COMUNE!=2) #only for allmuni
-#fulldaily<-fulldaily %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
+#add Balmuccia (002008), Rassa (002110) e Malvicino (006090) in Piemonte e Pedesina (014047) in Lombardia; only for subsample!
+# fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "002008", NOME_COMUNE="Balmuccia", NOME_REGIONE="Piemonte")
+# fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "002110", NOME_COMUNE="Rassa", NOME_REGIONE="Piemonte")
+# fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "006090", NOME_COMUNE="Malvicino", NOME_REGIONE="Piemonte")
+# fulldaily<-fulldaily %>% add_row(TIPO_COMUNE="1", T_20 = 0, T_19=0, T_18=0, T_17=0, T_16=0, T_15=0, COD_PROVCOM = "014047", NOME_COMUNE="Pedesina", NOME_REGIONE="Lombardia")
+# fulldaily<-fulldaily %>% filter(TIPO_COMUNE %in% c("1","2")) # & month !="01") # 1=Dati fino al 15 aprile 2020; 2=Dati fino al 31 marzo 2020
+# fulldaily_1<-fulldaily %>% filter(TIPO_COMUNE=="1") %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
+# fulldaily_2<-fulldaily %>% filter(TIPO_COMUNE=="2" & !month %in% c("04")) %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
+# fulldaily<-rbind(fulldaily_1,fulldaily_2)
+# remove(fulldaily_2,fulldaily_1)
+
+fulldaily<-fulldaily %>% filter(TIPO_COMUNE!=2) #only for allmuni from here
+fulldaily<-fulldaily %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0, T_19=0,T_18=0,T_17=0,T_16=0,T_15=0))
 
 fulldaily<-left_join(fulldaily[!is.na(fulldaily$COD_PROVCOM),!colnames(fulldaily) %in% c("NOME_REGIONE","NOME_PROVINCIA","NOME_COMUNE","REG","PROV","month","TIPO_COMUNE")],geog_codes,by="COD_PROVCOM")
 fulldaily$month<-substr(fulldaily$GE,1,2)
-remove(fulldaily_2,fulldaily_1)
 fulldaily<-fulldaily %>% 
-  filter(!GE %in% c(NA, "0229",
-                    "0416","0417","0418","0419","0420","0421","0422","0423","0424","0425","0426","0427","0428","0429","0430","0431") & 
+  filter(!GE %in% c(NA, "0229"),
+                    # "0416","0417","0418","0419","0420","0421","0422","0423","0424","0425","0426","0427","0428","0429","0430","0431") & 
                       month %in% c("01","02","03","04")) #&
 #"0215","0214","0213","0212","0211","0210","0209","0208","0207","0206","0205","0204","0203","0202","0201")
 fulldaily$saturday<-ifelse(fulldaily$GE %in% c("0201","0208","0215","0222","0229","0307","0314","0321","0328","0404","0411"),1,0)
@@ -316,11 +317,11 @@ fulldaily_2 <- fulldaily %>% group_by(COD_PROVCOM,GE) %>%
   summarise(T_15=sum(T_15),T_16=sum(T_16),T_17=sum(T_17),T_18=sum(T_18),T_19=sum(T_19))
 fulldaily_2 <- fulldaily_2 %>% #group_by(COD_PROVCOM,GE) %>%
   arrange(COD_PROVCOM,GE) %>%
-  mutate(avg1519_c=(rollmean(T_15,7,fill = NA)+rollmean(T_16,7,fill = NA)+
-                      rollmean(T_17,7,fill = NA)+rollmean(T_18,7,fill = NA)+rollmean(T_19,7,fill = NA))/5)
+  mutate(avg1519_c=(rollmean(T_15,15,fill = NA)+rollmean(T_16,15,fill = NA)+
+                      rollmean(T_17,15,fill = NA)+rollmean(T_18,15,fill = NA)+rollmean(T_19,15,fill = NA))/5)
 
 fulldaily %>% 
-  filter(month %in% c("01","02","03")) %>%
+  filter(month %in% c("01","02","03","04")) %>%
   group_by(GE) %>% summarise(T_20=sum(T_20,na.rm=TRUE),T_19=sum(T_19,na.rm=TRUE),T_18=sum(T_18,na.rm=TRUE),T_17=sum(T_17,na.rm=TRUE),
                              T_16=sum(T_16,na.rm=TRUE),T_16=sum(T_16,na.rm=TRUE),T_15=sum(T_15,na.rm=TRUE)) %>% 
   ggplot( aes(x= GE, y=T_20, group=1,color="2020")) + 
@@ -375,7 +376,7 @@ fulldaily$cumulT_20_c_pop<-fulldaily$cumulT_20_c/fulldaily$pop_18
 #big cities: "058091", "015146", "063049", "001272", "082053", "010025", "037006", "048017"
 
 fulldaily %>% 
-  filter(COD_PROVCOM %in% c("098019", "098014", "098010", "098026", "098035", "098054", "098002", "098057", "098062", "098047")) %>%
+  filter(COD_PROVCOM %in% c("058091", "015146", "063049", "001272", "082053", "010025", "037006", "048017")) %>%
   #group_by(GE) %>% mutate(cumulT_20_c_pop=mean(cumulT_20_c_pop,na.rm=TRUE)) %>% 
   ggplot( aes(x= GE, y=cumulT_20_c_pop*10000, group=COD_PROVCOM, color=COD_PROVCOM)) + 
   geom_line()+ 
@@ -442,7 +443,6 @@ fulldaily_scaled$tau0311<-as.numeric(as.character(fulldaily_scaled$tau0311))
 nohit <- fulldaily_scaled %>% group_by(COD_PROVCOM) %>% summarise(maxdeath=max(cumulT_20_c_pop,na.rm=TRUE)*10000) %>% filter(maxdeath<10)
 fulldaily_scaled<-fulldaily_scaled[!fulldaily_scaled$COD_PROVCOM %in% nohit$COD_PROVCOM,]
 
-
 #Codogno, Castiglione d’Adda, Casalpusterlengo, Fombio, Maleo, Somaglia, Bertonico, Terranova dei Passerini, Castelgerundo e San Fiorano
 #"098019", "098014", "098010", "098026", "098035", "098054", "098002", "098057", "098062", "098047"
 
@@ -480,14 +480,14 @@ fulldaily_scaled$weekofyear<-ifelse(fulldaily_scaled$GE %in% c("0201","0202","02
                                                                                                    ifelse(fulldaily_scaled$GE %in% c("0412","0413","0414","0415"),11,NA)))))))))))
 
 fulldaily_scaled<-fulldaily_scaled[!fulldaily_scaled$COD_PROVCOM %in% c("098019", "098014", "098010", "098026", "098035", "098054", "098002", "098057", "098062", "098047"),]
-paralleltrend<-inner_join(fulldaily_scaled[colnames(fulldaily_scaled) %in% c("COD_PROVCOM")],
-                          correl[colnames(correl) %in% c("codice_comune","residual","shut25","shut11","susp_act_empl","va_susp","va_act")],
-                          by=c("COD_PROVCOM"="codice_comune")) %>% distinct()
-paralleltrend$high_susp<-ifelse(paralleltrend$shut11>quantile(paralleltrend$shut11, probs=.5, na.rm=TRUE),1,NA)
-paralleltrend$high_susp<-ifelse(paralleltrend$shut11<quantile(paralleltrend$shut11, probs=.5, na.rm=TRUE),0,paralleltrend$high_susp)
+# paralleltrend<-inner_join(fulldaily_scaled[colnames(fulldaily_scaled) %in% c("COD_PROVCOM")],
+#                           correl[colnames(correl) %in% c("codice_comune","residual","shut25","shut11","susp_act_empl","va_susp","va_act")],
+#                           by=c("COD_PROVCOM"="codice_comune")) %>% distinct()
+# paralleltrend$high_susp<-ifelse(paralleltrend$shut11>quantile(paralleltrend$shut11, probs=.5, na.rm=TRUE),1,NA)
+# paralleltrend$high_susp<-ifelse(paralleltrend$shut11<quantile(paralleltrend$shut11, probs=.5, na.rm=TRUE),0,paralleltrend$high_susp)
 
 paralleltrend2<-inner_join(fulldaily_scaled[!is.na(fulldaily_scaled$timearrival) & !is.na(fulldaily_scaled$COD_PROVCOM) &
-                                              !fulldaily_scaled$COD_PROVCOM %in% nohit$COD_PROVCOM & fulldaily_scaled$pop_18>2500,
+                                              !fulldaily_scaled$COD_PROVCOM %in% nohit$COD_PROVCOM & fulldaily_scaled$pop_18>4500,
                                             colnames(fulldaily_scaled) %in% c("COD_PROVCOM","timearrival","tau0311")],
                            correl[colnames(correl) %in% c("codice_comune","shut11")],
                            by=c("COD_PROVCOM"="codice_comune")) %>% distinct()
@@ -505,19 +505,26 @@ weekarrival$weekarrival<-ifelse(weekarrival$timearrival>=0 & weekarrival$timearr
                                                                                         ifelse(weekarrival$timearrival>=quantile(weekarrival$timearrival,probs=.9,na.rm=TRUE), 10,
                                                                                                NA))))))))))
 
-# ifelse(weekarrival$timearrival>0 & weekarrival$timearrival<7, 1,
-#        ifelse(weekarrival$timearrival>=7 & weekarrival$timearrival<14, 2,
-#               ifelse(weekarrival$timearrival>=14 & weekarrival$timearrival<21, 3,
-#                      ifelse(weekarrival$timearrival>=21 & weekarrival$timearrival<28, 4,
-#                             ifelse(weekarrival$timearrival>=28 & weekarrival$timearrival<35, 5,
-#                                    ifelse(weekarrival$timearrival>=35 & weekarrival$timearrival<42, 6,
-#                                           ifelse(weekarrival$timearrival>=42 & weekarrival$timearrival<49, 7,
-#                                                  ifelse(weekarrival$timearrival>=49 & weekarrival$timearrival<56, 8,
-#                                                         ifelse(weekarrival$timearrival>=56 & weekarrival$timearrival<63, 9,
-#                                                                ifelse(weekarrival$timearrival>=63 & weekarrival$timearrival<70, 10,
-#                                                                       ifelse(weekarrival$timearrival>=70 & weekarrival$timearrival<77, 11,
-#                                                                              ifelse(weekarrival$timearrival>=77, 12,
-#                                                                                     NA))))))))))))
+  # ifelse(weekarrival$timearrival>0 & weekarrival$timearrival<7, 1,
+  #                               ifelse(weekarrival$timearrival>=7 & weekarrival$timearrival<14, 2,
+  #                                      ifelse(weekarrival$timearrival>=14 & weekarrival$timearrival<21, 3,
+  #                                             ifelse(weekarrival$timearrival>=21 & weekarrival$timearrival<28, 4,
+  #                                                    ifelse(weekarrival$timearrival>=28 & weekarrival$timearrival<35, 5,
+  #                                                           ifelse(weekarrival$timearrival>=35 & weekarrival$timearrival<42, 6,
+  #                                                                  ifelse(weekarrival$timearrival>=42 & weekarrival$timearrival<49, 7,
+  #                                                                         ifelse(weekarrival$timearrival>=49 & weekarrival$timearrival<56, 8,
+  #                                                                                ifelse(weekarrival$timearrival>=56 & weekarrival$timearrival<63, 9,
+  #                                                                                       ifelse(weekarrival$timearrival>=63 & weekarrival$timearrival<70, 10,
+  #                                                                                              ifelse(weekarrival$timearrival>=70 & weekarrival$timearrival<77, 11,
+  #                                                                                                     ifelse(weekarrival$timearrival>=77, 12,
+  #                                                                                                            NA))))))))))))
+  
+  
+  
+  
+  
+
+
 
 weekarrival<-weekarrival[!is.na(weekarrival$weekarrival),]
 describe(weekarrival$weekarrival)
@@ -532,8 +539,8 @@ paralleltrend2$high_susp<-ifelse(paralleltrend2$high_susp>=0,1,0)
 
 # paralleltrend2<-paralleltrend2 %>% group_by(weekarrival) %>% #mutate(high_susp=shut11-median(shut11))
 #       filter(tau0311==10)  %>%
-#       mutate(high_susp=shut11-quantile(shut11, probs=.75, na.rm=TRUE),
-#       low_susp=quantile(shut11, probs=.25, na.rm=TRUE)-shut11)
+#       mutate(high_susp=shut11-quantile(shut11, probs=.9, na.rm=TRUE),
+#       low_susp=quantile(shut11, probs=.1, na.rm=TRUE)-shut11)
 #   paralleltrend2$high_susp<-ifelse(paralleltrend2$high_susp>0,1,ifelse(paralleltrend2$low_susp>0,0,NA))
 
 #dd<-left_join(fulldaily_scaled,paralleltrend,by=c("COD_PROVCOM"))
@@ -561,7 +568,6 @@ dd$province<-substr(dd$COD_PROVCOM,1,3)
 
 dd <- dd %>% group_by(COD_PROVCOM) %>% arrange(desc(GE)) %>% mutate(ma=rollmean(death, 2,fill = list(NA, NULL, NA)))
 
-
 dd %>%
   filter(!is.na(high_susp) & month %in% c("02","03","04") & !is.na(timearrival) &
            !GE %in% c(
@@ -571,15 +577,15 @@ dd %>%
   ggplot( aes(x= tau0311+10, y=death, group=high_susp, color=high_susp)) + 
   geom_line(linetype = "dashed") + 
   geom_line(aes(y=ma,color=high_susp),size=2)+
-  #stat_smooth(method = "lm", formula = y ~ poly(x, 6),level = 1-1e-1) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
+  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-1e-1) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
   theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90)) + 
-  scale_x_continuous(breaks = seq(-50, 50, by = 2))+  
+  scale_x_continuous(breaks = seq(-50, 50, by = 5))+  
   theme(legend.position="bottom") +
   geom_vline(aes(xintercept = 0))  + 
   geom_vline(aes(xintercept = 10))  + 
   #geom_rect(aes(xmin= 10, xmax= 24), ymin=-Inf, ymax=Inf, fill=.1) +
-  ggtitle("Mortality rates in high and low shutdown exposure municipalities") +
-  xlab("Days relative to first announcement date (March 11st, 2020)") + ylab("Excess death rate, daily average") +
+  ggtitle("Mortality rates in high (=1) and low (=0) shutdown exposure municipalities") +
+  xlab("Days relative to first announcement date (March 11th, 2020)") + ylab("Excess deaths per 100,000 inhabitants") +
   labs(colour = "HighShutdown")
 #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) #+ #1t lockdown
 #geom_rect(aes(xmin= which(levels(as.factor(GE)) == '0321'), xmax= which(levels(as.factor(GE)) == '0331'), ymin=-Inf, ymax=Inf), fill=.1)
@@ -719,7 +725,6 @@ df<-left_join(df,capo1[colnames(capo1) %in% c("province","shut11_p")],by="provin
 df<-left_join(df,capo1b[colnames(capo1b) %in% c("province","shut25_p")],by="province") #outer (in-> out) spillovers
 df$shut11_p<-ifelse(is.na(df$shut11_avgp),df$shut11_p,NA)
 df$shut25_p<-ifelse(is.na(df$shut25_avgp),df$shut25_p,NA)
-
 
 #write.dta(data.frame(df,stsringsAsFactors = FALSE), "/data/Covid19.dta")
 
