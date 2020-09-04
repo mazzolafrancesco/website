@@ -4,6 +4,8 @@ install.packages("sandwich")
 install.packages("lmtest")
 install.packages("foreign")
 install.packages("strucchange")
+install.packages("ggplot2")
+install.packages("MatchIt")
 library(openxlsx)
 library(dplyr)
 library(tidyr)
@@ -16,52 +18,86 @@ library(Hmisc)
 library(strucchange)
 library(zoo)
 library(forcats)
+library(MatchIt)
+
 
 # population --------------------------------------------------------------
-pop_comune<-read.xlsx("https://www.dropbox.com/scl/fi/1ugjc8tczvgitvngik2xq/pop_comune.xlsx?dl=1&rlkey=qkhm46a9ebxoyaqsiewzag6hh")
+pop_comune<-read.csv2("https://www.dropbox.com/s/lmbpaik3jx97dph/pop_comune.csv?dl=1")
 pop_comune$comune<-substr(pop_comune$comune,1,6)
-pop_comune$pop_18<-as.numeric(pop_comune$pop_18) 
+pop_comune$pop_18<-as.numeric(as.character(pop_comune$pop_18)) 
 pop_comune <- pop_comune %>% filter(!is.na(pop_comune$pop_18))
 
-density<-read.xlsx("https://www.dropbox.com/scl/fi/7s3zfh763sz6pc41mdcoo/Dati-comunali-e-provinciali.xlsx?dl=1&rlkey=12xhj0v2fp7j9p4izgfuh7gj4",sheet="Dati comunali")
+density<-read.csv2("https://www.dropbox.com/s/atxpme8focr4vyj/density.csv?dl=1")
 density$Codice.Comune<-as.character(density$Codice.Comune)
 density$Codice.Comune<-ifelse(nchar(density$Codice.Comune)<5,paste0("0",as.character(density$Codice.Comune)),as.character(density$Codice.Comune))
 density$Codice.Comune<-ifelse(nchar(density$Codice.Comune)<6,paste0("0",as.character(density$Codice.Comune)),as.character(density$Codice.Comune))
-density<-density[colnames(density) %in% c("Codice.Comune","Superficie.totale.(Km2)")]
+density<-density[colnames(density) %in% c("Codice.Comune","Superficie.totale..Km2.")]
+density <- density %>% rename('Superficie.totale.(Km2)' = Superficie.totale..Km2.)
+density$`Superficie.totale.(Km2)`<-as.numeric(as.character(density$`Superficie.totale.(Km2)`))
 
-dip_anziani<-read.xlsx("https://www.dropbox.com/s/23uecfut60tcx6w/indice_dipendenza_anziani.xlsx?dl=1",sheet="Sheet2")
+dip_anziani<-read.csv2("https://www.dropbox.com/s/8t8pz5varwg36dt/indice_dipendenza_anziani.csv?dl=1")
 dip_anziani<-dip_anziani[!is.na(dip_anziani$provincia),names(dip_anziani) != "X1"]
-dip_anziani$dip_anziani<-dip_anziani$last/100
+dip_anziani$dip_anziani<-as.numeric(as.character(dip_anziani$last))/100
 dip_anziani$provincia<-substr(dip_anziani$provincia,14,50)
+
+education<-read.csv2("https://www.dropbox.com/s/0m7rqfgzq13yo9l/Diplomati2564.csv?dl=1")
+colnames(education) <- c("codcomune","namecomune","educ")
+education <- education[-1,-4]
+education$educ<-as.numeric(as.character(education$educ)) 
+education$codcomune <- ifelse(nchar(as.character(education$codcomune))<5,paste0("0",as.character(education$codcomune)),as.character(education$codcomune))
+education$codcomune <- ifelse(nchar(as.character(education$codcomune))<6,paste0("0",as.character(education$codcomune)),as.character(education$codcomune))
+
+incineq<-read.csv("https://www.dropbox.com/s/9ezur7ucxv9mav7/Divario2020.csv?dl=1",sep=";")
+colnames(incineq) <- c("codcomune","namecomune","incineq")
+incineq <- incineq[-1,]
+incineq$incineq<-as.numeric(as.character(incineq$incineq)) 
+incineq$codcomune <- ifelse(nchar(as.character(incineq$codcomune))<5,paste0("0",as.character(incineq$codcomune)),as.character(incineq$codcomune))
+incineq$codcomune <- ifelse(nchar(as.character(incineq$codcomune))<6,paste0("0",as.character(incineq$codcomune)),as.character(incineq$codcomune))
+
+intmob<-read.csv("https://www.dropbox.com/s/yfcr01ux2j35766/InternalMobility.csv?dl=1",sep=";")
+colnames(intmob) <- c("codcomune","namecomune","intmob")
+intmob <- intmob[-1,]
+intmob$intmob<-as.numeric(as.character(intmob$intmob)) 
+intmob$codcomune <- ifelse(nchar(as.character(intmob$codcomune))<5,paste0("0",as.character(intmob$codcomune)),as.character(intmob$codcomune))
+intmob$codcomune <- ifelse(nchar(as.character(intmob$codcomune))<6,paste0("0",as.character(intmob$codcomune)),as.character(intmob$codcomune))
+
+pm10<-read.csv("https://www.dropbox.com/s/pq2nvymgowyc172/AriaUrbanaPM10_p.csv?dl=1",sep=";") #problem of 4 provinces: 090, 091, 110, 111
+colnames(pm10) <- c("codcomune","namecomune","pm10")
+pm10 <- pm10[-1,]
+pm10$pm10<-as.numeric(as.character(pm10$pm10)) 
+pm10$codcomune <- ifelse(nchar(as.character(pm10$codcomune))<5,paste0("0",as.character(pm10$codcomune)),as.character(pm10$codcomune))
+pm10$codcomune <- ifelse(nchar(as.character(pm10$codcomune))<6,paste0("0",as.character(pm10$codcomune)),as.character(pm10$codcomune))
+pm10$province<-substr(pm10$codcomune,1,3)
+pm10 <- pm10 %>% group_by(province) %>% summarise(pm10=mean(pm10))
 
 # Business 25/03 ----------------------------------------------------------
 #import datasets
-ind_active<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_comunali_2017_DPCM_covid19.xlsx?dl=1&rlkey=c3iel7xmpb3lw6ey8dgi2swtd",sheet="Settori attivi_industria")
-serv_act<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_comunali_2017_DPCM_covid19.xlsx?dl=1&rlkey=c3iel7xmpb3lw6ey8dgi2swtd",sheet="settori attivi servizi")
-ind_susp<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_comunali_2017_DPCM_covid19.xlsx?dl=1&rlkey=c3iel7xmpb3lw6ey8dgi2swtd",sheet="settori sospesi industria")
-serv_susp<-read.xlsx("https://www.dropbox.com/scl/fi/vr9mh4ufowf8xmip23ww5/dati_comunali_2017_DPCM_covid19.xlsx?dl=1&rlkey=c3iel7xmpb3lw6ey8dgi2swtd",sheet="settori sospesi servizi")
+ind_active<-read.csv2("https://www.dropbox.com/s/3z53zifzkubq820/dati_comunali_2017_DPCM_covid_indact.csv?dl=1")
+serv_act<-read.csv2("https://www.dropbox.com/s/h8ggvuvemsp7wgy/dati_comunali_2017_DPCM_covid_servact.csv?dl=1")
+ind_susp<-read.csv2("https://www.dropbox.com/s/sp020mw8ix6mn6m/dati_comunali_2017_DPCM_covid_indsusp.csv?dl=1")
+serv_susp<-read.csv2("https://www.dropbox.com/s/xv16287bxzcx9vj/dati_comunali_2017_DPCM_covid_servsusp.csv?dl=1")
 
-ind_active$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(ind_active$`Valore_aggiunto.(valori.in.euro)`)
-ind_active$`Fatturato.(valori.in.euro)`<-as.numeric(ind_active$`Fatturato.(valori.in.euro)`)
-ind_active$`Numero.Addetti`<-as.numeric(ind_active$`Numero.Addetti`)
-ind_active$`Numero.Dipendenti`<-as.numeric(ind_active$`Numero.Dipendenti`)
-ind_active$`Unita_locali`<-as.numeric(ind_active$`Unita_locali`)
-ind_susp$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(ind_susp$`Valore_aggiunto.(valori.in.euro)`)
-ind_susp$`Fatturato.(valori.in.euro)`<-as.numeric(ind_susp$`Fatturato.(valori.in.euro)`)
-ind_susp$`Numero.Addetti`<-as.numeric(ind_susp$`Numero.Addetti`)
-ind_susp$`Numero.Dipendenti`<-as.numeric(ind_susp$`Numero.Dipendenti`)
-ind_susp$`Unita_locali`<-as.numeric(ind_susp$`Unita_locali`)
+ind_active$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(as.character(ind_active$`Valore_aggiunto..valori.in.euro.`))
+ind_active$`Fatturato.(valori.in.euro)`<-as.numeric(as.character(ind_active$`Fatturato..valori.in.euro.`))
+ind_active$`Numero.Addetti`<-as.numeric(as.character(ind_active$`Numero.Addetti`))
+ind_active$`Numero.Dipendenti`<-as.numeric(as.character(ind_active$`Numero.Dipendenti`))
+ind_active$`Unita_locali`<-as.numeric(as.character(ind_active$`Unita_locali`))
+ind_susp$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(as.character(as.character(ind_susp$`Valore_aggiunto..valori.in.euro.`)))
+ind_susp$`Fatturato.(valori.in.euro)`<-as.numeric(as.character(ind_susp$`Fatturato..valori.in.euro.`))
+ind_susp$`Numero.Addetti`<-as.numeric(as.character(ind_susp$`Numero.Addetti`))
+ind_susp$`Numero.Dipendenti`<-as.numeric(as.character(ind_susp$`Numero.Dipendenti`))
+ind_susp$`Unita_locali`<-as.numeric(as.character(ind_susp$`Unita_locali`))
 
-serv_act$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(serv_act$`Valore_aggiunto.(valori.in.euro)`)
-serv_act$`Fatturato.(valori.in.euro)`<-as.numeric(serv_act$`Fatturato.(valori.in.euro)`)
-serv_act$`Numero.Addetti`<-as.numeric(serv_act$`Numero.Addetti`)
-serv_act$`Numero.Dipendenti`<-as.numeric(serv_act$`Numero.Dipendenti`)
-serv_act$`Unita_locali`<-as.numeric(serv_act$`Unita_locali`)
-serv_susp$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(serv_susp$`Valore_aggiunto.(valori.in.euro)`)
-serv_susp$`Fatturato.(valori.in.euro)`<-as.numeric(serv_susp$`Fatturato.(valori.in.euro)`)
-serv_susp$`Numero.Addetti`<-as.numeric(serv_susp$`Numero.Addetti`)
-serv_susp$`Unita_locali`<-as.numeric(serv_susp$`Unita_locali`)
-serv_susp$`Numero.Dipendenti`<-as.numeric(serv_susp$`Numero.Dipendenti`)
+serv_act$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(as.character(serv_act$`Valore_aggiunto..valori.in.euro.`))
+serv_act$`Fatturato.(valori.in.euro)`<-as.numeric(as.character(serv_act$`Fatturato..valori.in.euro.`))
+serv_act$`Numero.Addetti`<-as.numeric(as.character(serv_act$`Numero.Addetti`))
+serv_act$`Numero.Dipendenti`<-as.numeric(as.character(serv_act$`Numero.Dipendenti`))
+serv_act$`Unita_locali`<-as.numeric(as.character(serv_act$`Unita_locali`))
+serv_susp$`Valore_aggiunto.(valori.in.euro)`<-as.numeric(as.character(serv_susp$`Valore_aggiunto..valori.in.euro.`))
+serv_susp$`Fatturato.(valori.in.euro)`<-as.numeric(as.character(serv_susp$`Fatturato..valori.in.euro.`))
+serv_susp$`Numero.Addetti`<-as.numeric(as.character(serv_susp$`Numero.Addetti`))
+serv_susp$`Unita_locali`<-as.numeric(as.character(serv_susp$`Unita_locali`))
+serv_susp$`Numero.Dipendenti`<-as.numeric(as.character(serv_susp$`Numero.Dipendenti`))
 
 ind<-inner_join(ind_susp[colnames(ind_susp) %in% c("Denominazione_provincia","codice_comune","Unita_locali","Numero.Addetti","Valore_aggiunto.(valori.in.euro)")],
                 ind_active[colnames(ind_active) %in% c("Denominazione_provincia","codice_comune","Unita_locali","Numero.Addetti","Valore_aggiunto.(valori.in.euro)")],
@@ -108,8 +144,11 @@ totbus$susp_act_empl<-ifelse(is.na(totbus$susp_act_empl),totbus$susp_act_units,t
 
 remove(ind_active,ind_susp,serv_act,serv_susp,totbus_active,totbus_susp)
 
+totbus$codice_comune<-as.character(totbus$codice_comune)
+totbus$codice_comune <- ifelse(nchar(as.character(totbus$codice_comune))<5,paste0("0",as.character(totbus$codice_comune)),as.character(totbus$codice_comune))
+totbus$codice_comune <- ifelse(nchar(as.character(totbus$codice_comune))<6,paste0("0",as.character(totbus$codice_comune)),as.character(totbus$codice_comune))
 totbus$codice_provincia<-substr(totbus$codice_comune,1,3)
-totbus$labint<-(totbus$empl_susp)/(totbus$units_susp)
+totbus$labint<-(totbus$empl_susp)/(totbus$units_susp) #change definition as you wish
 
 # pop_comune$provincia<-substr(pop_comune$comune,1,3)
 # maxpop_p<-pop_comune %>% group_by(provincia) %>% 
@@ -168,7 +207,8 @@ pers<-empl1103%>% filter(D3 %in% c("96")) %>% group_by(D1) %>% summarise(pers=su
 scuolasport<-empl1103 %>% filter(D3 %in% c("85","931")) %>%
   group_by(D1) %>% summarise(empl_scuolasport=sum(Value))
 
-empl1103_tot<-left_join(totbus[colnames(totbus) %in% c("codice_comune","empl_act","empl_susp")],empl1103_susp,by=c("codice_comune"="D1"))
+empl1103_tot<-left_join(totbus[colnames(totbus) %in% c("codice_comune","empl_act","empl_susp")],
+                        empl1103_susp,by=c("codice_comune"="D1"))
 empl1103_tot<-left_join(empl1103_tot,retail,by=c("codice_comune"="D1"))
 empl1103_tot<-left_join(empl1103_tot,food,by=c("codice_comune"="D1"))
 empl1103_tot<-left_join(empl1103_tot,pers,by=c("codice_comune"="D1"))
@@ -264,12 +304,12 @@ fulldaily$month<-substr(fulldaily$GE,1,2)
 fulldaily <- fulldaily %>% filter(month %in% c("01","02","03","04"))
 #fulldaily <- fulldaily %>% filter(CL_ETA %in% c("14","15","16","17","18","19","20","21"))#65+
 #fulldaily <- fulldaily %>% filter(CL_ETA %in% c("17","18","19","20","21"))#80+
-# fulldaily$T_20<-fulldaily$M_20
-# fulldaily$T_19<-fulldaily$M_19
-# fulldaily$T_18<-fulldaily$M_18
-# fulldaily$T_17<-fulldaily$M_17
-# fulldaily$T_16<-fulldaily$M_16
-# fulldaily$T_15<-fulldaily$M_15
+ # fulldaily$T_20<-fulldaily$M_20
+ # fulldaily$T_19<-fulldaily$M_19
+ # fulldaily$T_18<-fulldaily$M_18
+ # fulldaily$T_17<-fulldaily$M_17
+ # fulldaily$T_16<-fulldaily$M_16
+ # fulldaily$T_15<-fulldaily$M_15
 
 geog_codes<-fulldaily[colnames(fulldaily) %in% c("COD_PROVCOM","NOME_REGIONE","NOME_PROVINCIA","TIPO_COMUNE")] %>% filter(!is.na(fulldaily$NOME_REGIONE) | !is.na(fulldaily$NOME_PROVINCIA)) %>% unique()
 #add Balmuccia (002008), Rassa (002110) e Malvicino (006090) in Piemonte e Pedesina (014047) in Lombardia; only for subsample!
@@ -289,7 +329,8 @@ fulldaily<-fulldaily %>% complete(COD_PROVCOM, nesting(GE), fill = list(T_20 = 0
 fulldaily<-left_join(fulldaily[!is.na(fulldaily$COD_PROVCOM),!colnames(fulldaily) %in% c("NOME_REGIONE","NOME_PROVINCIA","NOME_COMUNE","REG","PROV","month","TIPO_COMUNE")],geog_codes,by="COD_PROVCOM")
 fulldaily$month<-substr(fulldaily$GE,1,2)
 fulldaily<-fulldaily %>% 
-  filter(!GE %in% c(NA, "0229"),
+  filter(!GE %in% c(NA, "0229",
+                    "0421","0422","0423","0424","0425","0426","0427","0428","0429","0430","0431") &
                     # "0416","0417","0418","0419","0420","0421","0422","0423","0424","0425","0426","0427","0428","0429","0430","0431") & 
                       month %in% c("01","02","03","04")) #&
 #"0215","0214","0213","0212","0211","0210","0209","0208","0207","0206","0205","0204","0203","0202","0201")
@@ -355,13 +396,18 @@ fulldaily<-fulldaily[!is.na(fulldaily$excD),!names(fulldaily) %in% c("T_15","T_1
 #fulldaily$excDe<-ifelse(fulldaily$T_20_ce-fulldaily$avg1519_ce<0,0,fulldaily$T_20_c-fulldaily$avg1519_c)
 remove(fulldaily_1,fulldaily_2,fulldaily_3,fulldaily_4)
 
-#density,dip_anziani,pop_18
+#density, dip_anziani, pop_18, incineq, educ, mobility, air
 fulldaily<-left_join(fulldaily,pop_comune[colnames(pop_comune) != "comune_name"], by=c("COD_PROVCOM"="comune"))
 fulldaily<-left_join(fulldaily,density,by=c("COD_PROVCOM"="Codice.Comune"))
 fulldaily$density<-fulldaily$pop_18/fulldaily$`Superficie.totale.(Km2)`
 fulldaily<-left_join(fulldaily,dip_anziani[colnames(dip_anziani) %in% c("dip_anziani","provincia")],by=c("NOME_PROVINCIA"="provincia"))
+# fulldaily<-left_join(fulldaily,incineq[colnames(incineq) != "namecomune"], by=c("COD_PROVCOM"="codcomune"))
+# fulldaily<-left_join(fulldaily,education[colnames(education) != "namecomune"], by=c("COD_PROVCOM"="codcomune"))
+# fulldaily<-left_join(fulldaily,intmob[colnames(intmob) != "namecomune"], by=c("COD_PROVCOM"="codcomune"))
+# fulldaily$prov <- substr(fulldaily$COD_PROVCOM,1,3)
+# fulldaily<-left_join(fulldaily,pm10[colnames(pm10) %in% c("pm10","province")],by=c("prov"="province"))
 
-fulldaily<-fulldaily[!is.na(fulldaily$pop_18),]
+fulldaily<-fulldaily[!is.na(fulldaily$pop_18),!names(fulldaily) %in% c("prov")]
 
 fulldaily<-fulldaily %>%
   group_by(COD_PROVCOM) %>%   #group by comune
@@ -376,9 +422,9 @@ fulldaily$cumulT_20_c_pop<-fulldaily$cumulT_20_c/fulldaily$pop_18
 #big cities: "058091", "015146", "063049", "001272", "082053", "010025", "037006", "048017"
 
 fulldaily %>% 
-  filter(COD_PROVCOM %in% c("058091", "015146", "063049", "001272", "082053", "010025", "037006", "048017")) %>%
+  filter(COD_PROVCOM %in% c("098019", "098014", "098010", "098026", "098035", "098054", "098002", "098057", "098062", "098047")) %>%
   #group_by(GE) %>% mutate(cumulT_20_c_pop=mean(cumulT_20_c_pop,na.rm=TRUE)) %>% 
-  ggplot( aes(x= GE, y=cumulT_20_c_pop*10000, group=COD_PROVCOM, color=COD_PROVCOM)) + 
+  ggplot( aes(x= GE, y=cumulT_20_c_pop*100000, group=COD_PROVCOM, color=COD_PROVCOM)) + 
   geom_line()+ 
   theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90)) +  
   theme(legend.position="bottom") +
@@ -440,7 +486,7 @@ fulldaily_scaled$tau0311<-ifelse(fulldaily_scaled$GE=="0405","15",ifelse(fulldai
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          fulldaily_scaled$tau0311))))))))))))))))))))))))
 
 fulldaily_scaled$tau0311<-as.numeric(as.character(fulldaily_scaled$tau0311))
-nohit <- fulldaily_scaled %>% group_by(COD_PROVCOM) %>% summarise(maxdeath=max(cumulT_20_c_pop,na.rm=TRUE)*10000) %>% filter(maxdeath<10)
+nohit <- fulldaily_scaled %>% group_by(COD_PROVCOM) %>% summarise(maxdeath=max(cumulT_20_c_pop,na.rm=TRUE)*100000) %>% filter(maxdeath<100)
 fulldaily_scaled<-fulldaily_scaled[!fulldaily_scaled$COD_PROVCOM %in% nohit$COD_PROVCOM,]
 
 #Codogno, Castiglione d’Adda, Casalpusterlengo, Fombio, Maleo, Somaglia, Bertonico, Terranova dei Passerini, Castelgerundo e San Fiorano
@@ -451,7 +497,7 @@ fulldaily_scaled %>%
   filter(timearrival<70 & !is.na(cumulT_20_c_pop)) %>% #&
   #  COD_PROVCOM %in% c("098019", "098014", "098010", "098026", "098035", "098054", "098002", "098057", "098062", "098047")) %>%
   group_by(timearrival) %>% mutate(cumulT_20_c_pop=mean(cumulT_20_c_pop,na.rm=TRUE)) %>% 
-  ggplot( aes(x= timearrival, y=cumulT_20_c_pop*10000, group=1)) + 
+  ggplot( aes(x= timearrival, y=cumulT_20_c_pop*100000, group=1)) + 
   geom_line()+ 
   #stat_smooth(method = 'lm', aes(colour = 'linear'), se = FALSE) +
   #stat_smooth(method = 'lm', formula = y ~ poly(x,2), aes(colour = 'polynomial'), se= FALSE) +
@@ -463,7 +509,7 @@ fulldaily_scaled %>%
   theme_bw() # +
 #scale_colour_brewer(name = 'Trendline', palette = 'Set2')+
 #geom_vline(aes(xintercept = 0))  + #lockdown lombardia
-#geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) + #1t lockdown
+#geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) + #1st lockdown
 #geom_rect(aes(xmin= 10, xmax= 35), ymin=-Inf, ymax=Inf, fill=.1) 
 #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0325')))   #2nd lockdown 
 
@@ -544,13 +590,13 @@ paralleltrend2$high_susp<-ifelse(paralleltrend2$high_susp>=0,1,0)
 #   paralleltrend2$high_susp<-ifelse(paralleltrend2$high_susp>0,1,ifelse(paralleltrend2$low_susp>0,0,NA))
 
 #dd<-left_join(fulldaily_scaled,paralleltrend,by=c("COD_PROVCOM"))
-dd<-left_join(fulldaily_scaled,paralleltrend2[!colnames(paralleltrend2) %in% c("tau0311","timearrival","weekarrival","shut11")],by=c("COD_PROVCOM"))
+dd<-left_join(fulldaily_scaled,paralleltrend2[!colnames(paralleltrend2) %in% c("tau0311","timearrival","weekarrival")],by=c("COD_PROVCOM"))
 dd$high_susp<-factor(dd$high_susp)
 dd<-dd[!is.na(dd$high_susp),] # & !is.na(dd$density) & !is.na(dd$dip_anziani),]
 
 dd<-dd %>% group_by(high_susp,tau0311) %>% #
   mutate(death=sum(excD,na.rm=TRUE)/sum(pop_18,na.rm=TRUE)*100000) %>% #mean(excD/pop_18,na.rm=TRUE)*100000) #sum(excD,na.rm=TRUE)/sum(pop_18,na.rm=TRUE)*100000)
-  select(high_susp,death,timearrival,GE,COD_PROVCOM,density,dip_anziani,tau0311,month,pop_18,
+  select(shut11,high_susp,death,timearrival,GE,COD_PROVCOM,density,dip_anziani,tau0311,month,pop_18,
          monday,tuesday,wednesday,thursday,friday,friday,saturday,weekofyear)#,vapop_m,susp_act_empl.y,incr_exp,tau0311)
 
 dd<-dd[!is.na(dd$death),]
@@ -577,7 +623,7 @@ dd %>%
   ggplot( aes(x= tau0311+10, y=death, group=high_susp, color=high_susp)) + 
   geom_line(linetype = "dashed") + 
   geom_line(aes(y=ma,color=high_susp),size=2)+
-  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-1e-1) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
+  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-2e-1) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
   theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90)) + 
   scale_x_continuous(breaks = seq(-50, 50, by = 5))+  
   theme(legend.position="bottom") +
@@ -594,6 +640,61 @@ dd %>%
 summary(dd_res_lm)
 describe(correl$shut11)
 sd(correl$shut11)
+
+
+# propensity score matching -----------------------------------------------
+dd_match<-paralleltrend2 %>% ungroup() %>% #paralleltrend contains munis hit by the virus and with >4500 inhabitants (n=2145)
+  select(COD_PROVCOM,shut11,high_susp,weekarrival) %>% unique() %>% na.omit()
+# dd_match$high_susp <- ifelse(dd_match$shut11-median(dd_match$shut11)>=0,1,0)
+dd_match$high_susp<-factor(dd_match$high_susp)
+
+dd_match<-inner_join(dd_match,density,by=c("COD_PROVCOM"="Codice.Comune"))
+dd_match<-inner_join(dd_match,pop_comune[!colnames(pop_comune) %in% c("comune_name")],by=c("COD_PROVCOM"="comune"))
+dd_match$density <-dd_match$pop_18/dd_match$`Superficie.totale.(Km2)`
+dd_match<-inner_join(dd_match,intmob[!colnames(intmob) %in% c("namecomune")],by=c("COD_PROVCOM"="codcomune"))
+dd_match<-inner_join(dd_match,incineq[!colnames(incineq) %in% c("namecomune")],by=c("COD_PROVCOM"="codcomune"))
+
+#apply MatchIt
+#mod_match <- matchit(high_susp ~ density + intmob + incineq + weekarrival, method = "nearest", discard= "control", data = dd_match) #without replacement
+mod_match <- matchit(high_susp ~ density + intmob + incineq, 
+                     method = "nearest", 
+                     discard= "both", 
+                     replace=T, 
+                     data = dd_match) #with replacement
+#plot(mod_match)
+summary(mod_match)
+
+a<-match.data(mod_match)
+
+dd2<-inner_join(fulldaily_scaled,a,by="COD_PROVCOM")
+dd2<-inner_join(dd2,pop_comune[!colnames(pop_comune) %in% c("comune_name")],by=c("COD_PROVCOM"="comune"))
+
+dd2<-dd2 %>% group_by(high_susp,tau0311) %>% #
+  mutate(death=sum(excD,na.rm=TRUE)/sum(pop_18,na.rm=TRUE)*100000) %>% #mean(excD/pop_18,na.rm=TRUE)*100000) #sum(excD,na.rm=TRUE)/sum(pop_18,na.rm=TRUE)*100000)
+  select(shut11,high_susp,death,timearrival,GE,COD_PROVCOM,tau0311,month)#,vapop_m,susp_act_empl.y,incr_exp,tau0311)
+dd2 <- dd2 %>% group_by(COD_PROVCOM) %>% arrange(desc(GE)) %>% mutate(ma=rollmean(death, 2,fill = list(NA, NULL, NA)))
+
+dd2 %>%
+  filter(COD_PROVCOM %in% unique(a$COD_PROVCOM) &
+           !is.na(high_susp) & month %in% c("02","03","04") & !is.na(timearrival) &
+           !GE %in% c(
+             "0217","0218","0219","0220","0221","0222","0223","0224","0225","0226","0227","0228","0229",
+             "0216","0215","0214","0213","0212","0211","0210","0209","0208","0207","0206","0205","0204","0203","0202","0201")) %>% #NOME_REGIONE %in% c("Abruzzo","Lazio")
+  group_by(high_susp,tau0311) %>% summarise(ma=mean(ma,na.rm=TRUE),death=mean(death,na.rm=TRUE)) %>%
+  ggplot( aes(x= tau0311+10, y=death, group=high_susp, color=high_susp)) + 
+  geom_line(linetype = "dashed") + 
+  geom_line(aes(y=ma,color=high_susp),size=2)+
+  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-4e-1) +
+  #aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
+  theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90)) + 
+  scale_x_continuous(breaks = seq(-50, 50, by = 5))+  
+  theme(legend.position="bottom") +
+  geom_vline(aes(xintercept = 0))  + 
+  geom_vline(aes(xintercept = 10))  + 
+  #geom_rect(aes(xmin= 10, xmax= 24), ymin=-Inf, ymax=Inf, fill=.1) +
+  ggtitle("Mortality rates in high (=1) and low (=0) shutdown exposure municipalities") +
+  xlab("Days relative to first announcement date (March 11th, 2020)") + ylab("Excess deaths per 100,000 inhabitants") +
+  labs(colour = "HighShutdown")
 
 # politics ----------------------------------------------------------------
 #https://elezionistorico.interno.gov.it/index.php?tpel=R&dtel=31/05/2015&tpa=I&tpe=R&lev0=0&levsut0=0&lev1=10&levsut1=1&ne1=10&es0=S&es1=S&ms=S
@@ -615,7 +716,7 @@ hospitals<-hospitals[hospitals$Anno=="2018",]
 hospitals$Codice.Comune<-as.character(hospitals$Codice.Comune)
 hospitals$Codice.Comune<-ifelse(nchar(hospitals$Codice.Comune)<5,paste0("0",hospitals$Codice.Comune),hospitals$Codice.Comune)
 hospitals$Codice.Comune<-ifelse(nchar(hospitals$Codice.Comune)<6,paste0("0",hospitals$Codice.Comune),hospitals$Codice.Comune)
-hospitals$Totale.posti.letto<-as.numeric(hospitals$Totale.posti.letto)
+hospitals$Totale.posti.letto<-as.numeric(as.character(hospitals$Totale.posti.letto))
 # casacura<- hospitals[hospitals$Codice.tipo.struttura==5.1,] %>% 
 #   group_by(Codice.Comune)  %>%
 #   summarise(casacura=n(),totpostiletto=sum(Totale.posti.letto)) 
@@ -642,8 +743,8 @@ tourism$tou_ita<-tourism$tou_ita/tourism$pop_prov*100
 # Regression --------------------------------------------------------------
 correl$totempl<-(correl$empl_susp.x+correl$empl_act.x)/(correl$pop_18)
 correl<-correl %>% filter(pop_18>2500) %>% group_by(province) %>% mutate(strong11=quantile(shut11, probs=0.5, na.rm=TRUE),
-                                                                         qtle1=quantile(shut11,probs=1/5, na.rm=TRUE),qtle2=quantile(shut11,probs=2/5, na.rm=TRUE),
-                                                                         qtle3=quantile(shut11,probs=3/5, na.rm=TRUE),qtle4=quantile(shut11,probs=4/5, na.rm=TRUE))
+                                                                         qtle1=quantile(shut11,probs=1/4, na.rm=TRUE),qtle2=quantile(shut11,probs=2/4, na.rm=TRUE),
+                                                                         qtle3=quantile(shut11,probs=3/4, na.rm=TRUE),qtle4=quantile(shut11,probs=4/5, na.rm=TRUE))
 correl$t1<-ifelse(correl$shut11<correl$qtle1,1,0)
 correl$t2<-ifelse(correl$shut11>=correl$qtle1 & correl$shut11<correl$qtle2,1,0)
 correl$t3<-ifelse(correl$shut11>=correl$qtle2 & correl$shut11<correl$qtle3,1,0)
@@ -687,6 +788,11 @@ df$province<-substr(df$codice_comune,1,3)
 df<-left_join(df,ospedali,by="province")
 df<-left_join(df,paralleltrend2[colnames(paralleltrend2) %in% c("COD_PROVCOM","high_susp")],by=c("codice_comune"="COD_PROVCOM"))
 df<-left_join(df,tourism[colnames(tourism) %in% c("provincia","tou_for","tou_ita")],by=c("NOME_PROVINCIA"="provincia"))
+
+df<-left_join(df,incineq[colnames(incineq) != "namecomune"], by=c("codice_comune"="codcomune"))
+df<-left_join(df,education[colnames(education) != "namecomune"], by=c("codice_comune"="codcomune"))
+df<-left_join(df,intmob[colnames(intmob) != "namecomune"], by=c("codice_comune"="codcomune"))
+df<-left_join(df,pm10[colnames(pm10) %in% c("pm10","province")],by="province")
 
 # # df<-df %>% filter(!is.na(timearrival)) %>% group_by(codice_comune) %>% mutate(nonna_t=mean(row_number())) %>% arrange(nonna_t)
 # capoluogo <- pop_comune %>% group_by(province) %>% mutate(maxpop_p=max(pop_18,na.rm=TRUE)) %>% select(province,comune,maxpop_p,pop_18) %>% unique()
