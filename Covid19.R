@@ -38,7 +38,7 @@ density$'Superficie.totale..Km2.'<-as.numeric(as.character(density$'Superficie.t
 
 dip_anziani<-read.xlsx("https://www.dropbox.com/s/23uecfut60tcx6w/indice_dipendenza_anziani.xlsx?dl=1",sheet="Sheet2")
 dip_anziani<-dip_anziani[!is.na(dip_anziani$provincia),names(dip_anziani) != "X1"]
-dip_anziani$dip_anziani<-dip_anziani$last/100
+dip_anziani$dip_anziani<-as.numeric(as.character(dip_anziani$last))/100
 dip_anziani$provincia<-substr(dip_anziani$provincia,14,50)
 
 education<-read.csv2("https://www.dropbox.com/s/0m7rqfgzq13yo9l/Diplomati2564.csv?dl=1")
@@ -378,13 +378,12 @@ fulldaily %>%
   theme(legend.position="bottom") +
   #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) + #1st lockdown
   #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0325')))  + #2nd lockdown 
-  ggtitle("Daily deaths in Italy over January-March 2020 and in the preceding years") +
+  ggtitle("Daily deaths in Italy over January-April 2020 and in the preceding years") +
   #scale_x_continuous() +
   labs (x = "Day", y= "Deaths, sum across Italian regions", color = "Legend") +
   scale_color_manual(name = "Years",
                      values = c("2015" = "black","2016" = "green", "2017" = "orange", "2018" = "yellow", "2019" = "blue", "2020" = "red"),
                      labels = c("2015", "2016", "2017", "2018", "2019", "2020"))
-
 
 fulldaily<-fulldaily[colnames(fulldaily) %in% c("NOME_REGIONE","NOME_PROVINCIA","COD_PROVCOM","GE","month","TIPO_COMUNE",
                                                 "monday","tuesday","wednesday","thursday","friday","saturday","sunday")] %>% unique()
@@ -454,7 +453,7 @@ fulldaily_scaled<-fulldaily_scaled %>% group_by(COD_PROVCOM) %>% arrange(GE) %>%
 
 #fulldaily_scaled %>% filter(COD_PROVCOM=="001272") %>% arrange(GE) %>% summarise(strucbreak=sd(cumulT_20_c_pop*10000,na.rm=TRUE))
 fulldaily_scaled$t<-ifelse(fulldaily_scaled$cumulT_20_c_pop-fulldaily_scaled$strucbreak>0,1,0) 
-fulldaily_scaled_1<- fulldaily_scaled %>% arrange (GE) %>% filter(t==1) %>% group_by(COD_PROVCOM) %>%
+fulldaily_scaled_1<- fulldaily_scaled %>% arrange(GE) %>% filter(t==1) %>% group_by(COD_PROVCOM) %>%
   mutate(timearrival=row_number())
 fulldaily_scaled<-left_join(fulldaily_scaled,fulldaily_scaled_1[colnames(fulldaily_scaled_1) %in% c("COD_PROVCOM","GE","timearrival")],by=c("COD_PROVCOM","GE"))
 remove(fulldaily_scaled_1)
@@ -568,13 +567,6 @@ weekarrival$weekarrival<-ifelse(weekarrival$timearrival>=0 & weekarrival$timearr
   #                                                                                              ifelse(weekarrival$timearrival>=70 & weekarrival$timearrival<77, 11,
   #                                                                                                     ifelse(weekarrival$timearrival>=77, 12,
   #                                                                                                            NA))))))))))))
-  
-  
-  
-  
-  
-
-
 
 weekarrival<-weekarrival[!is.na(weekarrival$weekarrival),]
 describe(weekarrival$weekarrival)
@@ -627,17 +619,19 @@ dd %>%
   group_by(high_susp,tau0311) %>% summarise(ma=mean(ma,na.rm=TRUE),death=mean(death,na.rm=TRUE)) %>%
   ggplot( aes(x= tau0311+10, y=death, group=high_susp, color=high_susp)) + 
   geom_line(linetype = "dashed") + 
-  #geom_line(aes(y=ma,color=high_susp),size=2)+
-  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-1e-1,size=2) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
+  geom_line(aes(y=ma,color=high_susp),size=2)+
+  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-1e-1,linetype=0) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
   theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90)) + 
   scale_x_continuous(breaks = seq(-50, 50, by = 5))+  
   theme(legend.position="bottom") +
   geom_vline(aes(xintercept = 0))  + 
   geom_vline(aes(xintercept = 10),linetype = "longdash")  + 
   #geom_rect(aes(xmin= 10, xmax= 24), ymin=-Inf, ymax=Inf, fill=.1) +
-  ggtitle("Mortality rates in high (=1) and low (=0) shutdown exposure municipalities") +
+  ggtitle("Mortality rates in high and low shutdown exposure municipalities") +
   xlab("Days relative to first announcement date (March 11th, 2020)") + ylab("Excess deaths per 100,000 inhabitants") +
-  labs(colour = "HighShutdown")
+  #labs(colour = "HighShutdown")
+  scale_colour_discrete(#values=c("#999999", "#E69F00", "#56B4E9"), 
+    name="",breaks=c("0", "1"), labels=c("LowShutdown", "HighShutdown"))
 #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) #+ #1t lockdown
 #geom_rect(aes(xmin= which(levels(as.factor(GE)) == '0321'), xmax= which(levels(as.factor(GE)) == '0331'), ymin=-Inf, ymax=Inf), fill=.1)
 #length(listcomune)
@@ -649,7 +643,7 @@ sd(correl$shut11)
 # matching ----------------------------------------------------------------
 dd_match<-paralleltrend2 %>% ungroup() %>% #paralleltrend contains munis hit by the virus and with >4500 inhabitants (n=2145)
   select(COD_PROVCOM,shut11,weekarrival) %>% #high_susp,
-  unique() %>% na.omit()
+  unique() %>% na.omit() 
 dd_match$high_susp <- ifelse(dd_match$shut11-median(dd_match$shut11)>=0,1,0)
 dd_match$high_susp<-factor(dd_match$high_susp)
 dd_match<-inner_join(dd_match,density,by=c("COD_PROVCOM"="Codice.Comune"))
@@ -668,7 +662,8 @@ if(!is.null(dev.list())) dev.off()
 mod_match <- matchit(high_susp ~ weekarrival, #density + intmob + incineq + educ + pop_18
                      method = "nearest", #nearest, optimal, full
                      discard= "none", #both, none, treated, control
-                     replace=T,
+                     #replace=T,
+                     caliper = .01,
                      #reestimate=TRUE,
                      data = dd_match) #with replacement
 #plot(mod_match)
@@ -677,7 +672,7 @@ a<-match.data(mod_match)
 
 mod_matchb <- matchit(high_susp ~ density + intmob + incineq, #density + intmob + incineq + educ + pop_18
                       method = "nearest", #nearest, optimal, full
-                      discard= "both", #both, none, treated, control
+                      discard= "none", #both, none, treated, control
                       replace=T,
                       #reestimate=TRUE,
                       data = a) #with replacement
@@ -693,6 +688,7 @@ dd2<-dd2 %>% group_by(high_susp,tau0311) %>% #
 dd2 <- dd2 %>% group_by(COD_PROVCOM) %>% arrange(desc(GE)) %>% mutate(ma=rollmean(death, 2,fill = list(NA, NULL, NA)))
 
 if(!is.null(dev.list())) dev.off()
+#cols <- c("8" = "red", "4" = "blue", "6" = "darkgreen")
 dd2 %>%
   filter(!is.na(high_susp) & month %in% c("02","03","04") & !is.na(timearrival) &
            !GE %in% c(
@@ -701,17 +697,20 @@ dd2 %>%
   group_by(high_susp,tau0311) %>% summarise(ma=mean(ma,na.rm=TRUE),death=mean(death,na.rm=TRUE)) %>%
   ggplot( aes(x= tau0311+10, y=death, group=high_susp, color=high_susp)) + 
   geom_line(linetype = "dashed") + 
-  #geom_line(aes(y=ma,color=high_susp),size=2)+
-  stat_smooth(method = "lm", formula = y ~ poly(x, 15),level = 1-2e-1,size=2) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
+  geom_line(aes(y=ma,color=high_susp),size=2)+
+  stat_smooth(method = "lm", formula = y ~ poly(x, 17),level = 1-2e-1,linetype=0) +#aes(x = seq(length(GE)),y=death, group=factor(high_susp)), se = F, method = "lm", formula = y ~ poly(x, 8)) +
   theme(axis.text.x = element_text(face = "bold", size = 10, angle = 90)) + 
   scale_x_continuous(breaks = seq(-50, 50, by = 5))+  
   theme(legend.position="bottom") +
   geom_vline(aes(xintercept = 0))  + 
   geom_vline(aes(xintercept = 10),linetype = "longdash")  + 
   #geom_rect(aes(xmin= 10, xmax= 24), ymin=-Inf, ymax=Inf, fill=.1) +
-  ggtitle("Mortality rates in high (=1) and low (=0) shutdown exposure municipalities") +
+  ggtitle("Mortality rates in high and low shutdown exposure municipalities") +
   xlab("Days relative to first announcement date (March 11th, 2020)") + ylab("Excess deaths per 100,000 inhabitants") +
-  labs(colour = "HighShutdown")
+  #labs(colour = "HighShutdown") + 
+  scale_colour_discrete(#values=cols, 
+                    name="", breaks=c("0", "1"), labels=c("LowShutdown", "HighShutdown"))
+
            
 # politics ----------------------------------------------------------------
 #https://elezionistorico.interno.gov.it/index.php?tpel=R&dtel=31/05/2015&tpa=I&tpe=R&lev0=0&levsut0=0&lev1=10&levsut1=1&ne1=10&es0=S&es1=S&ms=S
@@ -733,7 +732,7 @@ hospitals<-hospitals[hospitals$Anno=="2018",]
 hospitals$Codice.Comune<-as.character(hospitals$Codice.Comune)
 hospitals$Codice.Comune<-ifelse(nchar(hospitals$Codice.Comune)<5,paste0("0",hospitals$Codice.Comune),hospitals$Codice.Comune)
 hospitals$Codice.Comune<-ifelse(nchar(hospitals$Codice.Comune)<6,paste0("0",hospitals$Codice.Comune),hospitals$Codice.Comune)
-hospitals$Totale.posti.letto<-as.numeric(hospitals$Totale.posti.letto)
+hospitals$Totale.posti.letto<-as.numeric(as.character(hospitals$Totale.posti.letto))
 # casacura<- hospitals[hospitals$Codice.tipo.struttura==5.1,] %>% 
 #   group_by(Codice.Comune)  %>%
 #   summarise(casacura=n(),totpostiletto=sum(Totale.posti.letto)) 
@@ -746,7 +745,7 @@ ospedali$province<-substr(ospedali$Codice.Comune,1,3)
 pop_comune$province<-substr(pop_comune$comune,1,3)
 pop_comune<- pop_comune %>% group_by(province) %>% mutate(pop_prov=sum(pop_18,na.rm=TRUE))
 ospedali<-left_join(ospedali,pop_comune[colnames(pop_comune) %in% c("province","pop_prov")],by=c("province")) %>% unique()
-ospedali <- ospedali %>% group_by(province) %>% summarise(capacity_p=sum(totpostiletto)/mean(pop_prov))
+ospedali <- ospedali %>% group_by(province) %>% summarise(capacity_p=sum(totpostiletto)/mean(pop_prov,na.rm=TRUE))
 
 # Tourism -----------------------------------------------------------------
 tourism<-read.xlsx("https://www.dropbox.com/s/qvew1xjqaexn6z5/turism.xlsx?dl=1")
@@ -804,6 +803,7 @@ df$place25<-ifelse(df$GE %in% c("0316","0317","0318","0319","0320","0321","0322"
 df$province<-substr(df$codice_comune,1,3)
 df<-left_join(df,ospedali,by="province")
 df<-left_join(df,paralleltrend2[colnames(paralleltrend2) %in% c("COD_PROVCOM","high_susp")],by=c("codice_comune"="COD_PROVCOM"))
+#df<-left_join(df,paralleltrend2[colnames(dd_match) %in% c("COD_PROVCOM","high_susp")],by=c("codice_comune"="COD_PROVCOM"))
 df<-left_join(df,tourism[colnames(tourism) %in% c("provincia","tou_for","tou_ita")],by=c("NOME_PROVINCIA"="provincia"))
 
 df<-left_join(df,incineq[colnames(incineq) != "namecomune"], by=c("codice_comune"="codcomune"))
@@ -828,7 +828,7 @@ df<-left_join(df,pm10[colnames(pm10) %in% c("pm10","province")],by="province")
 # df$shut11_p<-ifelse(is.na(df$shut11_avgp),df$shut11_p,NA)
 # df$shut25_p<-ifelse(is.na(df$shut25_avgp),df$shut25_p,NA)
 
-largshut<- correl %>% group_by(province) %>% filter(pop_18>15000) %>% mutate(maxshut11=max(shut11,na.rm=TRUE),maxshut25=max(shut25,na.rm=TRUE)) %>%
+largshut<- correl %>% group_by(province) %>% filter(pop_18>16500) %>% mutate(maxshut11=max(shut11,na.rm=TRUE),maxshut25=max(shut25,na.rm=TRUE)) %>%
   select(codice_comune,province,maxshut11,shut11,maxshut25,shut25)
 largshut$big11<-ifelse(largshut$shut11/largshut$maxshut11>=1 & largshut$shut11/largshut$maxshut11<=1,1,0)
 largshut$big25<-ifelse(largshut$shut25/largshut$maxshut25>=1 & largshut$shut25/largshut$maxshut25<=1,1,0)
@@ -848,6 +848,9 @@ df<-left_join(df,capo1[colnames(capo1) %in% c("province","shut11_p")],by="provin
 df<-left_join(df,capo1b[colnames(capo1b) %in% c("province","shut25_p")],by="province") #outer (in-> out) spillovers
 df$shut11_p<-ifelse(is.na(df$shut11_avgp),df$shut11_p,NA)
 df$shut25_p<-ifelse(is.na(df$shut25_avgp),df$shut25_p,NA)
+
+#excluding unmatched 
+#df<-df %>% filter(codice_comune %in% unique(a$COD_PROVCOM))
 
 #write.dta(data.frame(df,stsringsAsFactors = FALSE), "/data/Covid19.dta")
 
@@ -937,6 +940,20 @@ death_tot<-death_tot[colnames(death_tot) %in% c("region","CODES_NUTS3_LAU2 ","de
 death_tot$delta<-death_tot$death_20-death_tot$death_19
 
 remove(death_female,death_male)
+
+
+# Eceff -------------------------------------------------------------------
+w<-data.frame("Model"=c("Baseline","NoLag","GMM","PropScoreMatch","LogLin"),
+              "lb"=c(5175.949887,5312.16,5748.04476,4019.617129,3961.678418),
+              "coeff"=c(9083.284605,9180,10114.5852,10074.22839,8032.237712),
+              "ub"=c(12990.61932,12974.4,14481.12564,16118.76543,8890.860622))
+#x <- data.frame("Baseline" = c(5175.949887, 9083.284605, 12990.61932), "NoLag" = c(5312.16,9180,12974.4), 
+#                "GMM" = c(5748.04476,10114.5852,14481.12564) , "PropScoreMatch" = c(4019.617129,10074.22839,16118.76543) , "LogLin" = c(3961.678418,8032.237712,8890.860622))
+
+ggplot(w, aes(x = Model, y = coeff)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymax = ub, ymin = lb)) + labs(title = "Economic Effect Comparison across Models", y = "Economic Effect, 95% confidence interval") +
+  scale_y_continuous(breaks = seq(3800, 16000, len = 2000))
 
 # Google mobility ---------------------------------------------------------
 mobility<-read.csv("https://www.dropbox.com/s/q8n11641eok0z17/Global_Mobility_Report.csv?dl=1")
