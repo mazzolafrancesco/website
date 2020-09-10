@@ -5,8 +5,9 @@ install.packages("sandwich")
 install.packages("lmtest")
 install.packages("foreign")
 install.packages("strucchange")
-installed.packages("xlsx")
-installed.packages("MatchIt")
+install.packages("xlsx")
+install.packages("MatchIt")
+install.packages("extrafont")
 library(openxlsx)
 library(dplyr)
 library(tidyr)
@@ -21,6 +22,7 @@ library(zoo)
 library(forcats)
 library(readxl)
 library(MatchIt)
+library(extrafont)
 
 # population --------------------------------------------------------------
 #pop_comune<-read.xlsx("https://www.dropbox.com/scl/fi/1ugjc8tczvgitvngik2xq/pop_comune.xlsx?dl=1&rlkey=qkhm46a9ebxoyaqsiewzag6hh")
@@ -287,10 +289,11 @@ data = data[with(data, order(propsector,value)), ]
 data %>% 
   ggplot(aes(fill=propsector, y=value*100, x=fct_reorder2(codice_comune,propsector, value),width=1)) + 
   geom_bar(position="stack", stat="identity") + coord_cartesian(ylim=c(0, 100), expand=FALSE) +
-  labs(y= "Exposure (in %)") +
+  labs(y= "Share of labor force (in %)") +
   scale_fill_discrete(name = "Proportions", labels = c("Open", "SecondExposure", "FirstExposure")) +
   ggtitle("Sectoral shutdown exposure") + 
-  theme(legend.position="bottom",axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())
+  theme(legend.position="bottom",axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+
+  theme(text=element_text(size=16,  family="Times New Roman"))
 remove(data,a,b,c)
 
 rcorr(as.matrix(correl[colnames(correl) %in% c("food11","ret11","pers11")]))
@@ -383,7 +386,8 @@ fulldaily %>%
   labs (x = "Day", y= "Deaths, sum across Italian regions", color = "Legend") +
   scale_color_manual(name = "Years",
                      values = c("2015" = "black","2016" = "green", "2017" = "orange", "2018" = "yellow", "2019" = "blue", "2020" = "red"),
-                     labels = c("2015", "2016", "2017", "2018", "2019", "2020"))
+                     labels = c("2015", "2016", "2017", "2018", "2019", "2020"))+
+  theme(text=element_text(size=16,  family="Times New Roman"))
 
 fulldaily<-fulldaily[colnames(fulldaily) %in% c("NOME_REGIONE","NOME_PROVINCIA","COD_PROVCOM","GE","month","TIPO_COMUNE",
                                                 "monday","tuesday","wednesday","thursday","friday","saturday","sunday")] %>% unique()
@@ -631,7 +635,8 @@ dd %>%
   xlab("Days relative to first announcement date (March 11th, 2020)") + ylab("Excess deaths per 100,000 inhabitants") +
   #labs(colour = "HighShutdown")
   scale_colour_discrete(#values=c("#999999", "#E69F00", "#56B4E9"), 
-    name="",breaks=c("0", "1"), labels=c("LowShutdown", "HighShutdown"))
+    name="",breaks=c("0", "1"), labels=c("LowShutdown", "HighShutdown")) +
+  theme(text=element_text(size=16,  family="Times New Roman"))
 #geom_vline(aes(xintercept = which(levels(as.factor(GE)) == '0311'))) #+ #1t lockdown
 #geom_rect(aes(xmin= which(levels(as.factor(GE)) == '0321'), xmax= which(levels(as.factor(GE)) == '0331'), ymin=-Inf, ymax=Inf), fill=.1)
 #length(listcomune)
@@ -709,7 +714,8 @@ dd2 %>%
   xlab("Days relative to first announcement date (March 11th, 2020)") + ylab("Excess deaths per 100,000 inhabitants") +
   #labs(colour = "HighShutdown") + 
   scale_colour_discrete(#values=cols, 
-                    name="", breaks=c("0", "1"), labels=c("LowShutdown", "HighShutdown"))
+                    name="", breaks=c("0", "1"), labels=c("LowShutdown", "HighShutdown")) +
+  theme(text=element_text(size=16,  family="Times New Roman"))
 
            
 # politics ----------------------------------------------------------------
@@ -943,17 +949,22 @@ remove(death_female,death_male)
 
 
 # Eceff -------------------------------------------------------------------
-w<-data.frame("Model"=c("Baseline","NoLag","GMM","PropScoreMatch","LogLin"),
-              "lb"=c(5175.949887,5312.16,5748.04476,4019.617129,3961.678418),
-              "coeff"=c(9083.284605,9180,10114.5852,10074.22839,8032.237712),
-              "ub"=c(12990.61932,12974.4,14481.12564,16118.76543,8890.860622))
-#x <- data.frame("Baseline" = c(5175.949887, 9083.284605, 12990.61932), "NoLag" = c(5312.16,9180,12974.4), 
-#                "GMM" = c(5748.04476,10114.5852,14481.12564) , "PropScoreMatch" = c(4019.617129,10074.22839,16118.76543) , "LogLin" = c(3961.678418,8032.237712,8890.860622))
+w<-data.frame("Model"=c("Baseline","NoLag","GMM","PropScoreMatch"),
+              "lb"=c(5378.530476,5520.071693,7212.101386,3129.82166),
+              "coeff"=c(9438.793678,9539.2944,12690.82218,7844.164562),
+              "ub"=c(13499.05688,13482.20275,18169.54298,12550.6633))
 
 ggplot(w, aes(x = Model, y = coeff)) +
   geom_point(size = 4) +
-  geom_errorbar(aes(ymax = ub, ymin = lb)) + labs(title = "Economic Effect Comparison across Models", y = "Economic Effect, 95% confidence interval") +
-  scale_y_continuous(breaks = seq(3800, 16000, len = 2000))
+  geom_errorbar(aes(ymax = ub, ymin = lb)) + labs(title = "Economic Effect Comparison across Models", y = "Economic Effect, 95% confidence interval") 
+scale_y_continuous(breaks = seq(3000, 16000, len = 1000))
+
+ggplot(w, aes(x = Model, y = coeff, fill = Model)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  ggtitle("Economic Effect Comparison across Models") + ylab("Economic Effect, 95% confidence interval") +
+  geom_errorbar(aes(ymin = lb, ymax = ub), width = 0.2,
+                position = position_dodge(0.9)) +theme(legend.position="bottom") +
+  theme(text=element_text(size=16,  family="Times New Roman"))
 
 # Google mobility ---------------------------------------------------------
 mobility<-read.csv("https://www.dropbox.com/s/q8n11641eok0z17/Global_Mobility_Report.csv?dl=1")
